@@ -1,0 +1,27 @@
+Package: autobeale
+Type: Package
+Title: autobeale: code to calculate loads by means of Beale's Ratio Estimator.
+Version: 0.1.0
+Authors@R: c( person("Steve", "Westenbroek", role = c("aut","cre"),
+    email = "smwesten@usgs.gov"),
+    person("Rem","Confessor", role = c("ctb"),
+    email = "rconfeso@heidelberg.edu"),
+    person("Peter","Richards", role=c("aut"),
+    email = "prichard@heidelberg.edu") )
+Description:
+    This package is an updated version of AutoBeale, a Fortran program aimed at programmatically
+    partitioning flow and concentration data into stratums in such a way as to minimize the overall
+    root-mean squared error in the overall load estimate. 
+License: CC0
+Depends: R (>= 3.0)
+Imports:
+    R6,
+    mcga,
+    dplyr,
+    lubridate (>= 1.5.0)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
