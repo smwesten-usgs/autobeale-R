@@ -9,11 +9,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Overview.
+## Overview
 
 This document demonstrates the basic use of the autobeale package. The code is broken into a number of discrete functions, which may be thought of as pertaining to either the Beale calculation itself, or else to the partitioning and stratification of the dataset *prior* to calculation with the Beale method.
 
-# Background.
+## Background
 
 The Beale Ratio Estimator has been used in numerous nutrient and pollutant loading studies, particularly for load estimates to the Great Lakes. The `autobeale` package traces its roots back earlier versions of software aimed at making these calculations easier. Peter Richards, the author of an earlier `AutoBeale` code has written about the 
 evolution of Beale software over the years:
@@ -29,7 +29,7 @@ evolution of Beale software over the years:
  objectively and sequentially searched out the best stratification given the data, with “best” being defined as
  minimizing the root-mean-square error (RMSE) given the data at hand.
 
-# Example dataset
+## Example dataset
 
 This set of example applications demonstrates various approaches to estimation of nitrate-nitrite loads in kilograms in the Rocky River near Cleveland, Ohio. After loading the `autobeale` library as well as Hadly Wickham's excellent `dplyr` library, the data is read in from two simple tab-delimited text files. 
 
@@ -38,6 +38,7 @@ This set of example applications demonstrates various approaches to estimation o
 
 library(autobeale)
 library(dplyr)
+library(mcga)
 
 
 ```
@@ -53,6 +54,9 @@ discharge_data     <- read.table( discharge_file, header=TRUE )
 concentration_data <- read.table( concentration_file, header=TRUE )
 qcdata <- dplyr::left_join(discharge_data, concentration_data, by=c("date" = "date") )
 
+# don't forget to convert the discharge value to cubic meters per second!
+qcdata$discharge <- cfs_to_cms( qcdata$discharge )
+
 ```
 
 The resulting dataframe looks like this:
@@ -61,7 +65,7 @@ The resulting dataframe looks like this:
 knitr::kable(head(qcdata, 10))
 ```
 
-# Example #1: load by means of the unstratified Beale ratio estimator.
+## Example #1: load by means of the unstratified Beale ratio estimator
 
 Note that the `beale` function expects discharge to be provided in units of *cubic meters per second*, with concentration data provided in units of *milligrams per liter*.
 
@@ -70,4 +74,68 @@ result_list <- beale( discharge_cms=qcdata$discharge / 35.3146, conc_mg_L=qcdata
 print( result_list )
 ```
 
+## Example #2: Beale Ratio Estimator with data partitioned into five stratums
 
+In addition to the `beale` function are a number of `R6` classes aimed at making it easier to examine various data partitioning strategies. Strategies may be ranked by their impact on the root mean square of error associated with the load estimate. In this example, a genetic algorithm package is wired up to assist in the search for an optimum partitioning strategy, with optimimum being defined as minimization of the root mean square of error associated with the overall loading estimate, similar to the original AutoBeale.
+
+In order to use these classes, real R date classes (POSIX) must be supplied along with the discharge and concentration data. Another of Hadley Wickham's library packages, `lubridate`, makes this easy:
+
+```{r, date munging}
+
+library(lubridate)
+
+qcdata$date <- lubridate::ymd( qcdata$date )
+
+```
+
+The `qcdata` dataframe now looks like this:
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(qcdata, 10))
+```
+
+First we creata a `strata` object of the appropriate size (5 stratums):
+
+```{r, strata and partitioning}
+number_of_stratums <- 5
+mystrata <- strata$new( number_of_stratums, qcdata )
+```
+
+Next we wire up a genetic algoritm package to test alternative partitioning strategies. Package `mcga` uses its `evalFunc` argument to pass a vector of fractions that define the partitioning scheme to the `strata` object, which evaluates the Beale load and returns the associated RMSE estimate.
+
+The genetic algorithm package, in turn, compares the current RMSE value with other previously calculated values (associated with other partitioning strategies), and 'evolves' a new partitioning strategy to test. This process is repeated hundreds or thousands of times in an attempt to find a optimum partitioning strategy.
+
+```{r, genetic_algorithm}
+
+ m <- mcga( popsize=200,
+            chsize=4,
+            minval=0.0,
+            maxval=1.0,
+            elitism=10,
+            maxiter=40,
+            crossprob=1.0,
+            mutateprob=0.05,
+            evalFunc=mystrata$update_rmse )
+
+ cat("Best chromosome:\n")
+ cat(m$population[1,],"\n")
+ cat("Cost: ",m$costs[1],"\n")
+
+# create a copy of the strata object
+best_strata <- mystrata$clone()
+
+# rerun with the optimized parameter
+best_strata$partitions$update( sort( m$population[ 1, ]) )
+best_strata$rearrange_stratums( best_strata$partitions$get_date_values() )
+
+best_strata$calc_loads()
+
+results_df <- best_strata$summarize_results()
+results_df <- data.frame(lapply(results_df, function(y) if(is.numeric(y)) round(y, 2) else y)) 
+```
+
+The results of the load calculation with optimum stratification using 5 stratums now looks like this:
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable( results_df, digits=2 )
+```

@@ -4,7 +4,15 @@ library(lubridate)
 library(dplyr)
 library(mcga)
 
-
+#' @title Data structure to hold partition information.
+#'
+#' @description In addition to storing information on the partitions, a number of
+#' functions are associated with the data structure.
+#' @slot initialize reserve space for the appropriate number of partitions
+#' @slot get_date_fractions return the date fractions associated with the current set of partitions
+#' @slot get_date_values return the dates associated with the current set of partitions
+#' @export
+#' @md
 partitions <- R6Class("partitions",
                       public=list(
                         num_partitions=NULL,

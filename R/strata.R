@@ -4,6 +4,32 @@ library(lubridate)
 library(dplyr)
 library(mcga)
 
+#' @title Data structure to hold strata information.
+#'
+#' @description In addition to storing information on the stratums and load, a number of
+#' functions are associated with the data structure.
+#' @slot all_valid returns `TRUE` if all underlying stratums contain sufficient concentration data
+#' @slot calc_stats loops over the underlying stratums to calculate stats for entire period
+#' @slot rearrange_stratums accepts a list of partition dates; moves partitions and recalculates stratum statistics
+#' @slot calc_loads loops over underlying stratums and calculates the load in each
+#' @slot update_rmse accepts new partitioning scheme, calculates the load, and returns the rmse
+#' @examples
+#' # create new strata object with 3 stratums
+#' number_of_stratums <- 3
+#' mystrata <- strata$new( number_of_stratums, qcdata )
+#'
+#' # create partitions to divide year into 3 roughly equal chunks (Jan-Apr, May-Aug, Sep-Dec)
+#' mypartitions <- c( as.Date("1997-04-30"), as.Date("1997-08-31") )
+#'
+#' # make call to rearrange stratum boundaries
+#' # NOTE: this also copies the appropriate discharge and concentration data
+#' #       into each stratum
+#' mystrata$rearrange_stratums( mypartitions )
+#'
+#' # now calculate loads for each stratum and for the strata overall
+#' mystrata$calc_loads()
+#' @export
+#' @md
 strata <- R6Class("strata",
                   public=list(
                     num_stratums=NULL,
@@ -16,6 +42,7 @@ strata <- R6Class("strata",
                     rmse=NULL,
                     mse=NULL,
                     ci=NULL,
+                    df=NULL,
                     q_conc_df=NULL,
                     all_stratums_valid=NULL,
                     min_num_samples_per_stratum=3,
@@ -43,7 +70,7 @@ strata <- R6Class("strata",
                       return( all_stratums_valid )
                     },
                     calc_stats=function() {
-                      self$rmse <- 0.0; self$mse <- 0.0; self$ci <- 0.0; self$total_load <- 0.0
+                      self$rmse <- 0.0; self$mse <- 0.0; self$ci <- 0.0; self$df <- 1E+23;  self$total_load <- 0.0
                       for ( indx in 1:self$num_stratums ) {
                         self$total_load <- self$total_load + self$stratums[[ indx ]]$sl$load_total_corrected
                         self$mse        <- self$mse + self$stratums[[ indx ]]$sl$mse
@@ -55,7 +82,7 @@ strata <- R6Class("strata",
                       }
                     },
                     rearrange_stratums=function( partition_list ) {
-                      self$rmse <- 0.0; self$mse <- 0.0; self$ci <- 0.0; self$total_load <- 0.0
+                      self$rmse <- 0.0; self$mse <- 0.0; self$ci <- 0.0; self$df <- 1E+23;  self$total_load <- 0.0
                       num_partitions <- length(partition_list)
                       self$stratums[[1]]$update( self$start_date, partition_list[1], self$q_conc_df )
                       if ( num_partitions > 1 ) {
@@ -66,7 +93,7 @@ strata <- R6Class("strata",
                       self$stratums[[self$num_stratums]]$update( partition_list[num_partitions] + 1, self$end_date, self$q_conc_df )
                     },
                     calc_loads=function() {
-                      self$rmse <- 1E+23; self$mse <- 0.0; self$ci <- 1E+23; self$total_load <- 0.0
+                      self$rmse <- 1E+23; self$mse <- 0.0; self$ci <- 1E+23; self$df <- 1E+23; self$total_load <- 0.0
                       for ( indx in seq(1,self$num_stratums) ) {
                         self$stratums[[ indx ]]$calc_load()
                         self$total_load <- self$total_load + self$stratums[[ indx ]]$sl$load_total_corrected
@@ -88,8 +115,46 @@ strata <- R6Class("strata",
                         self$mse  <- 1E+23
                       }
                       return( self$rmse )
+                    },
+                    summarize_results=function() {
+                      n <- self$num_stratums + 1
+                      df <- data.frame( stratum=character(n), from_date=structure(numeric(n), class="Date"),
+                                        to_date=structure( numeric(n), class="Date"),
+                                        n_conc=numeric(n), n_discharge=numeric(n), discharge_mean=numeric(n),
+                                        discharge_mean__sample_days=numeric(n), mse=numeric(n),
+                                        rmse=numeric(n), df=numeric(n), load_total_corrected=numeric(n), ci=numeric(n),
+                                        stringsAsFactors=FALSE )
+                      for ( i in 1:self$num_stratums ) {
+                        sl <- self$stratums[[i]]$sl
+                        df$stratum[i] <- as.character( x=i )
+                        df$from_date[i] <- self$stratums[[i]]$start_date
+                        df$to_date[i] <- self$stratums[[i]]$end_date
+                        df$n_conc[i] <- sl$n_conc
+                        df$n_discharge[i] <- sl$n_discharge
+                        df$discharge_mean[i] <- sl$discharge_mean
+                        df$discharge_mean__sample_days[i] <- sl$discharge_mean_sample_days_only
+                        df$mse[i] <- sl$mse
+                        df$rmse[i] <- sl$rmse
+                        df$df[i] <- sl$df
+                        df$load_total_corrected[i] <- sl$load_total_corrected
+                        df$ci[i] <- sl$confidence_interval
+                      }
+                      df$stratum[n] <- "all strata"
+                      df$from_date[n] <- self$stratums[[1]]$start_date
+                      df$to_date[n] <- self$stratums[[i]]$end_date
+                      df$n_conc[n] <- sum( !is.na( self$q_conc_df$concentration ) )
+                      df$n_discharge[n] <- sum( !is.na( self$q_conc_df$discharge ) )
+                      df$discharge_mean[n] <- mean( self$q_conc_df$discharge, na.rm=TRUE )
+                      df$discharge_mean__sample_days[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
+                      df$mse[n] <- self$mse
+                      df$rmse[n] <- self$rmse
+                      df$df[n] <- self$df
+                      df$load_total_corrected[n] <-self$total_load
+                      df$ci[n] <- self$ci
+
+                      return( df )
                     }
 
-                  ) )
+                ) )
 
 
