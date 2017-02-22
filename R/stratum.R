@@ -33,12 +33,6 @@ stratum <- R6Class("stratum",
                      },
                      calc_load=function() {
                        self$sl <- beale(discharge_cms=self$q, conc_mg_L=self$c)
-
-#                       self$q_mean <- sl$q_mean
-#                       self$c_mean <- sl$c_mean
-#                       self$l_mean <- sl$l_mean
-#                       self$n_discharge <- sl$n_discharge
-#                       self$n_conc <- sl$n_conc
                      }
 
                    ))

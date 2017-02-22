@@ -61,8 +61,10 @@ beale <- function(discharge_cms, conc_mg_L) {
 
   numer                <- 1 + ( (1 / n_conc ) * sql / ( discharge_mean *load_mean ) )
   denom                <- 1 + ( ( 1 / n_conc ) * sqq / ( discharge_mean**2 ) )
-  load_daily_corrected <- load_mean * ( discharge_mean /discharge_subset_mean ) * numer / denom
-  load_total_corrected <- round( load_daily_corrected * n_discharge, 1 )
+  bias_correction_factor <- ( discharge_mean / discharge_subset_mean ) * numer / denom
+  load_daily_corrected   <- load_mean * bias_correction_factor
+  load_total_corrected   <- load_daily_corrected * n_discharge
+  bias_correction        <- load_daily_corrected - load_mean
 
   ### Estimate the error
   sxy <- sql
@@ -97,6 +99,7 @@ beale <- function(discharge_cms, conc_mg_L) {
                     load_daily_corrected=load_daily_corrected,
                     load_mean=load_mean,
                     load_daily=load_daily,
+                    bias_correction=bias_correction,
                     confidence_interval=CI,
                     discharge_mean=discharge_mean,
                     discharge_mean_sample_days_only=discharge_subset_mean,

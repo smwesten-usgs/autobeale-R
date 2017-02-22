@@ -29,11 +29,20 @@ partitions <- R6Class("partitions",
                           }
                         },
                         update=function( date_fractions ) {
+                          self$update( date_fractions )
+                        },
+                        update_fractions=function( date_fractions ) {
                           n <- length( date_fractions )
                           for (i in 1:n) {
                             pt <- self$pt[[i]]
                             pt$update( self$start_date, self$end_date, date_fractions[i] )
                           }
+                        },
+                        update_dates=function( date_values ) {
+                          period_length <- as.numeric( self$end_date - self$start_date + 1 )
+                          day_values <- as.numeric( date_values - self$start_date + 1 )
+                          date_fractions <- day_values / period_length
+                          self$update_fractions( date_fractions )
                         },
                         get_date_fractions=function() {
                           denominator <- as.numeric( self$end_date - self$start_date )

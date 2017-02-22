@@ -121,8 +121,9 @@ strata <- R6Class("strata",
                       df <- data.frame( stratum=character(n), from_date=structure(numeric(n), class="Date"),
                                         to_date=structure( numeric(n), class="Date"),
                                         n_conc=numeric(n), n_q=numeric(n), q_mean=numeric(n),
-                                        q_mean__sample_days=numeric(n), mse=numeric(n),
+                                        q_sample_mean=numeric(n), load_daily_mean=numeric(n), mse=numeric(n),
                                         rmse=numeric(n), df=numeric(n), load_total=numeric(n), ci=numeric(n),
+                                        bias_correction=numeric(n),
                                         stringsAsFactors=FALSE )
                       for ( i in 1:self$num_stratums ) {
                         sl <- self$stratums[[i]]$sl
@@ -132,7 +133,9 @@ strata <- R6Class("strata",
                         df$n_conc[i] <- sl$n_conc
                         df$n_q[i] <- sl$n_discharge
                         df$q_mean[i] <- sl$discharge_mean
-                        df$q_mean__sample_days[i] <- sl$discharge_mean_sample_days_only
+                        df$q_sample_mean[i] <- sl$discharge_mean_sample_days_only
+                        df$load_daily_mean[i] <- sl$load_mean
+                        df$bias_correction[i] <- sl$bias_correction
                         df$mse[i] <- sl$mse
                         df$rmse[i] <- sl$rmse
                         df$df[i] <- sl$df
@@ -145,7 +148,9 @@ strata <- R6Class("strata",
                       df$n_conc[n] <- sum( !is.na( self$q_conc_df$concentration ) )
                       df$n_q[n] <- sum( !is.na( self$q_conc_df$discharge ) )
                       df$q_mean[n] <- mean( self$q_conc_df$discharge, na.rm=TRUE )
-                      df$q_mean__sample_days[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
+                      df$q_sample_mean[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
+                      df$load_daily_mean[n] <- mean( df$load_daily_mean[1:n-1] )
+                      df$bias_correction[n] <- NA
                       df$mse[n] <- self$mse
                       df$rmse[n] <- self$rmse
                       df$df[n] <- self$df
