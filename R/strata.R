@@ -120,9 +120,9 @@ strata <- R6Class("strata",
                       n <- self$num_stratums + 1
                       df <- data.frame( stratum=character(n), from_date=structure(numeric(n), class="Date"),
                                         to_date=structure( numeric(n), class="Date"),
-                                        n_conc=numeric(n), n_discharge=numeric(n), discharge_mean=numeric(n),
-                                        discharge_mean__sample_days=numeric(n), mse=numeric(n),
-                                        rmse=numeric(n), df=numeric(n), load_total_corrected=numeric(n), ci=numeric(n),
+                                        n_conc=numeric(n), n_q=numeric(n), q_mean=numeric(n),
+                                        q_mean__sample_days=numeric(n), mse=numeric(n),
+                                        rmse=numeric(n), df=numeric(n), load_total=numeric(n), ci=numeric(n),
                                         stringsAsFactors=FALSE )
                       for ( i in 1:self$num_stratums ) {
                         sl <- self$stratums[[i]]$sl
@@ -130,26 +130,26 @@ strata <- R6Class("strata",
                         df$from_date[i] <- self$stratums[[i]]$start_date
                         df$to_date[i] <- self$stratums[[i]]$end_date
                         df$n_conc[i] <- sl$n_conc
-                        df$n_discharge[i] <- sl$n_discharge
-                        df$discharge_mean[i] <- sl$discharge_mean
-                        df$discharge_mean__sample_days[i] <- sl$discharge_mean_sample_days_only
+                        df$n_q[i] <- sl$n_discharge
+                        df$q_mean[i] <- sl$discharge_mean
+                        df$q_mean__sample_days[i] <- sl$discharge_mean_sample_days_only
                         df$mse[i] <- sl$mse
                         df$rmse[i] <- sl$rmse
                         df$df[i] <- sl$df
-                        df$load_total_corrected[i] <- sl$load_total_corrected
+                        df$load_total[i] <- sl$load_total_corrected
                         df$ci[i] <- sl$confidence_interval
                       }
                       df$stratum[n] <- "all strata"
                       df$from_date[n] <- self$stratums[[1]]$start_date
                       df$to_date[n] <- self$stratums[[i]]$end_date
                       df$n_conc[n] <- sum( !is.na( self$q_conc_df$concentration ) )
-                      df$n_discharge[n] <- sum( !is.na( self$q_conc_df$discharge ) )
-                      df$discharge_mean[n] <- mean( self$q_conc_df$discharge, na.rm=TRUE )
-                      df$discharge_mean__sample_days[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
+                      df$n_q[n] <- sum( !is.na( self$q_conc_df$discharge ) )
+                      df$q_mean[n] <- mean( self$q_conc_df$discharge, na.rm=TRUE )
+                      df$q_mean__sample_days[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
                       df$mse[n] <- self$mse
                       df$rmse[n] <- self$rmse
                       df$df[n] <- self$df
-                      df$load_total_corrected[n] <-self$total_load
+                      df$load_total[n] <-self$total_load
                       df$ci[n] <- self$ci
 
                       return( df )

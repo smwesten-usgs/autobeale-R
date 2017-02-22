@@ -1,0 +1,73 @@
+---
+title: "Introduction to autobeale"
+author: "Steve Westenbroek"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to autobeale}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Overview.
+
+This document demonstrates the basic use of the autobeale package. The code is broken into a number of discrete functions, which may be thought of as pertaining to either the Beale calculation itself, or else to the partitioning and stratification of the dataset *prior* to calculation with the Beale method.
+
+# Background.
+
+The Beale Ratio Estimator has been used in numerous nutrient and pollutant loading studies, particularly for load estimates to the Great Lakes. The `autobeale` package traces its roots back earlier versions of software aimed at making these calculations easier. Peter Richards, the author of an earlier `AutoBeale` code has written about the 
+evolution of Beale software over the years:
+
+> The Beale Ratio Estimator is described in Tin (1965). It has been widely used for computation of
+ substance loadings to receiving waters, particularly in the Great Lakes system. The initial code was
+ developed by Ken Baun of Wisconsin DNR (1982). It was subsequently used and developed by Kevin McGunagle
+ at the International Joint Commission (IJC), from whom the current version was received. It was then
+ developed in the 1990’s by Pete Richards at the National Center for Water Quality Research
+ at Heidelberg University (www.heidelberg.edu/academiclife/distinctive/ncwqr). Peter developed the code
+ to work with the Macintosh computer of the time (“Motorola" architecture, which was replaced by
+ Intel architecture ca. 2005), and included a Graphic User Interface (GUI) and an algorithm that 
+ objectively and sequentially searched out the best stratification given the data, with “best” being defined as
+ minimizing the root-mean-square error (RMSE) given the data at hand.
+
+# Example dataset
+
+This set of example applications demonstrates various approaches to estimation of nitrate-nitrite loads in kilograms in the Rocky River near Cleveland, Ohio. After loading the `autobeale` library as well as Hadly Wickham's excellent `dplyr` library, the data is read in from two simple tab-delimited text files. 
+
+
+```{r, initialization, warning=FALSE,message=FALSE}
+
+library(autobeale)
+library(dplyr)
+
+
+```
+
+The `autobeale::beale` function expects the incoming data to be provided in pairwise fashion. There should be a discharge value provided for *every* day within the timeframe for the laoding calculation, with a concentration value provided on days that were sampled. `dplyr::left_join` can be used to quickly create an input dataset suitable for use with the `beale` function.
+
+```{r, results='asis'}
+
+discharge_file     <- system.file( "extdata", "ROCKFLOW.DAT", package="autobeale")
+concentration_file <- system.file( "extdata", "ROCKNO23.DAT", package="autobeale")
+
+discharge_data     <- read.table( discharge_file, header=TRUE )
+concentration_data <- read.table( concentration_file, header=TRUE )
+qcdata <- dplyr::left_join(discharge_data, concentration_data, by=c("date" = "date") )
+
+```
+
+The resulting dataframe looks like this:
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(qcdata, 10))
+```
+
+# Example #1: load by means of the unstratified Beale ratio estimator.
+
+Note that the `beale` function expects discharge to be provided in units of *cubic meters per second*, with concentration data provided in units of *milligrams per liter*.
+
+```{r, unstratified_beale, results='asis'}
+result_list <- beale( discharge_cms=qcdata$discharge / 35.3146, conc_mg_L=qcdata$concentration )
+print( result_list )
+```
+
+
