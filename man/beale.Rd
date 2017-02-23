@@ -4,12 +4,12 @@
 \alias{beale}
 \title{Calculate pollutant loads by means of the Beale Ratio Estimator.}
 \usage{
-beale(discharge_cms, conc_mg_L)
+beale(discharge_cms, concentration_mg_L)
 }
 \arguments{
 \item{discharge_cms}{vector of daily discharge values given in cubic meters per second.}
 
-\item{conc_mg_L}{paired vector of daily concentration values given in mg_L}
+\item{concentration_mg_L}{paired vector of daily concentration values given in mg_L}
 }
 \value{
 A list with the following items:
@@ -17,7 +17,7 @@ A list with the following items:
 Name \tab Description \cr
 load_total_corrected \tab bias-corrected load for entire period of calculation \cr
 load_daily_corrected \tab bias-corrected daily load \cr
-load_mean \tab mean of daily loads over period of calculation \cr
+load_mean_daily \tab mean of daily loads over period of calculation \cr
 load_daily \tab vector of individual daily loads \cr
 confidence_interval \tab 95\% confidence interval about the total corrected load \cr
 discharge_mean \tab mean discharge during calculation period \cr
@@ -52,7 +52,7 @@ A Windows version of the code was also developed, with a minimal GUI."
 library(dplyr)
 discharge_data <- read.table("ROCKFLOW.DAT", header=TRUE )
 concentration_data <- read.table("ROCKNO3.DAT", header=TRUE )
-qcdata <- left_join(discharge_data, concentration_data, by=c("date" = "date") )
-head( qcdata )
-beale( discharge_cmd=qcdata$discharge / 35.3146, conc_mg_L=qcdata$concentration )
+flow_conc_df <- left_join(discharge_data, concentration_data, by=c("date" = "date") )
+head( flow_conc_df )
+beale( discharge_cms=cfs_to_cms( flow_conc_df$discharge ), concentration_mg_L=flow_conc_df$concentration )
 }

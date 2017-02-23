@@ -1,10 +1,10 @@
 ---
-title: "Introduction to autobeale"
+title: "Simple unstratified Beale"
 author: "Steve Westenbroek"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to autobeale}
+  %\VignetteIndexEntry{Simple unstratified Beale}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -34,17 +34,18 @@ concentration_file <- system.file( "extdata", "ROCKNO23.DAT", package="autobeale
 
 discharge_data     <- read.table( discharge_file, header=TRUE )
 concentration_data <- read.table( concentration_file, header=TRUE )
-qcdata <- dplyr::left_join(discharge_data, concentration_data, by=c("date" = "date") )
+discharge_conc_df  <- NULL
+discharge_conc_df  <- dplyr::left_join(discharge_data, concentration_data, by=c("date" = "date") )
 
 # don't forget to convert the discharge value to cubic meters per second!
-qcdata$discharge <- cfs_to_cms( qcdata$discharge )
+discharge_conc_df$discharge <- cfs_to_cms( discharge_conc_df$discharge )
 
 ```
 
 The resulting dataframe looks like this:
 
 ```{r, echo=FALSE, results='asis'}
-knitr::kable(head(qcdata, 10))
+knitr::kable(head(discharge_conc_df, 10))
 ```
 
 ## Example #1: load by means of the unstratified Beale ratio estimator
@@ -52,7 +53,7 @@ knitr::kable(head(qcdata, 10))
 Once the dataset is in good shape, we can call `beale` to calculate the load. Note that the `beale` function expects discharge to be provided in units of *cubic meters per second*, with concentration data provided in units of *milligrams per liter*.
 
 ```{r, unstratified_beale, results='asis'}
-result_list <- beale( discharge_cms=qcdata$discharge / 35.3146, conc_mg_L=qcdata$concentration )
+result_list <- beale( discharge_cms=discharge_conc_df$discharge, concentration_mg_L=discharge_conc_df$concentration )
 print( result_list, digits=2 )
 ```
 

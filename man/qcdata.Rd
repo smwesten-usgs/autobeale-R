@@ -7,8 +7,9 @@
 \format{A data frame with 365 rows and 3 variables:
 \describe{
 \item{date}{date, as an R data class}
-\item{discharge}{daily mean discharge, in cubic feet per second}
-\item{concentration}{concentration of nitrate-nitrite, in milligrams per liter}
+\item{discharge_cfs}{daily mean discharge, in cubic feet per second}
+\item{discharge_cms}{daily mean discharge, in cubic meters per second}
+\item{concentration_mg_L}{concentration of nitrate-nitrite, in milligrams per liter}
 }}
 \usage{
 qcdata

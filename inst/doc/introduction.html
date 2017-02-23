@@ -12,50 +12,12 @@
 
 <meta name="author" content="Steve Westenbroek" />
 
-<meta name="date" content="2017-02-16" />
+<meta name="date" content="2017-02-23" />
 
 <title>Introduction to autobeale</title>
 
 
 
-<style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-</style>
 
 
 
@@ -70,113 +32,21 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Introduction to autobeale</h1>
 <h4 class="author"><em>Steve Westenbroek</em></h4>
-<h4 class="date"><em>2017-02-16</em></h4>
+<h4 class="date"><em>2017-02-23</em></h4>
 
 
 
-<div id="overview." class="section level1">
-<h1>Overview.</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
 <p>This document demonstrates the basic use of the autobeale package. The code is broken into a number of discrete functions, which may be thought of as pertaining to either the Beale calculation itself, or else to the partitioning and stratification of the dataset <em>prior</em> to calculation with the Beale method.</p>
 </div>
-<div id="background." class="section level1">
-<h1>Background.</h1>
+<div id="background" class="section level2">
+<h2>Background</h2>
 <p>The Beale Ratio Estimator has been used in numerous nutrient and pollutant loading studies, particularly for load estimates to the Great Lakes. The <code>autobeale</code> package traces its roots back earlier versions of software aimed at making these calculations easier. Peter Richards, the author of an earlier <code>AutoBeale</code> code has written about the evolution of Beale software over the years:</p>
 <blockquote>
 <p>The Beale Ratio Estimator is described in Tin (1965). It has been widely used for computation of substance loadings to receiving waters, particularly in the Great Lakes system. The initial code was developed by Ken Baun of Wisconsin DNR (1982). It was subsequently used and developed by Kevin McGunagle at the International Joint Commission (IJC), from whom the current version was received. It was then developed in the 1990’s by Pete Richards at the National Center for Water Quality Research at Heidelberg University (www.heidelberg.edu/academiclife/distinctive/ncwqr). Peter developed the code to work with the Macintosh computer of the time (“Motorola” architecture, which was replaced by Intel architecture ca. 2005), and included a Graphic User Interface (GUI) and an algorithm that objectively and sequentially searched out the best stratification given the data, with “best” being defined as minimizing the root-mean-square error (RMSE) given the data at hand.</p>
 </blockquote>
-</div>
-<div id="example-dataset" class="section level1">
-<h1>Example dataset</h1>
-<p>This set of example applications demonstrates various approaches to estimation of nitrate-nitrite loads in kilograms in the Rocky River near Cleveland, Ohio. After loading the <code>autobeale</code> library as well as Hadly Wickham’s excellent <code>dplyr</code> library, the data is read in from two simple tab-delimited text files.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(autobeale)
-<span class="kw">library</span>(dplyr)</code></pre></div>
-<p>The <code>autobeale::beale</code> function expects the incoming data to be provided in pairwise fashion. There should be a discharge value provided for <em>every</em> day within the timeframe for the laoding calculation, with a concentration value provided on days that were sampled. <code>dplyr::left_join</code> can be used to quickly create an input dataset suitable for use with the <code>beale</code> function.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">discharge_file     &lt;-<span class="st"> </span><span class="kw">system.file</span>( <span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;ROCKFLOW.DAT&quot;</span>, <span class="dt">package=</span><span class="st">&quot;autobeale&quot;</span>)
-concentration_file &lt;-<span class="st"> </span><span class="kw">system.file</span>( <span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;ROCKNO23.DAT&quot;</span>, <span class="dt">package=</span><span class="st">&quot;autobeale&quot;</span>)
-
-discharge_data     &lt;-<span class="st"> </span><span class="kw">read.table</span>( discharge_file, <span class="dt">header=</span><span class="ot">TRUE</span> )
-concentration_data &lt;-<span class="st"> </span><span class="kw">read.table</span>( concentration_file, <span class="dt">header=</span><span class="ot">TRUE</span> )
-qcdata &lt;-<span class="st"> </span>dplyr::<span class="kw">left_join</span>(discharge_data, concentration_data, <span class="dt">by=</span><span class="kw">c</span>(<span class="st">&quot;date&quot;</span> =<span class="st"> &quot;date&quot;</span>) )</code></pre></div>
-<p>The resulting dataframe looks like this:</p>
-<table>
-<thead>
-<tr class="header">
-<th align="right">date</th>
-<th align="right">discharge</th>
-<th align="right">concentration</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="right">970101</td>
-<td align="right">11.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">970102</td>
-<td align="right">10.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">970103</td>
-<td align="right">11.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">970104</td>
-<td align="right">12.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">970105</td>
-<td align="right">52.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">970106</td>
-<td align="right">48.0</td>
-<td align="right">4.7</td>
-</tr>
-<tr class="odd">
-<td align="right">970107</td>
-<td align="right">13.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">970108</td>
-<td align="right">7.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="odd">
-<td align="right">970109</td>
-<td align="right">6.0</td>
-<td align="right">NA</td>
-</tr>
-<tr class="even">
-<td align="right">970110</td>
-<td align="right">5.4</td>
-<td align="right">NA</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="example-1-load-by-means-of-the-unstratified-beale-ratio-estimator." class="section level1">
-<h1>Example #1: load by means of the unstratified Beale ratio estimator.</h1>
-<p>Note that the <code>beale</code> function expects discharge to be provided in units of <em>cubic meters per second</em>, with concentration data provided in units of <em>milligrams per liter</em>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">result_list &lt;-<span class="st"> </span><span class="kw">beale</span>( <span class="dt">discharge_cms=</span>qcdata$discharge /<span class="st"> </span><span class="fl">35.3146</span>, <span class="dt">conc_mg_L=</span>qcdata$concentration )
-<span class="kw">print</span>( result_list )</code></pre></div>
-<p>$load_total_corrected [1] 182137.8</p>
-<p>$load_daily_corrected [1] 499.0077</p>
-<p>$load_mean [1] 516.1724</p>
-<p>$load_daily [1] 5.519485e+02 3.787306e+01 2.603161e+01 8.905552e+01 7.902454e+01 [6] 7.339741e+01 3.853364e+01 2.935896e+02 8.068821e+02 1.011906e+03 [11] 2.003749e+02 7.584399e+01 9.473158e+02 1.081388e+02 5.920724e+02 [16] 1.487521e+02 4.159186e+01 2.417221e+02 6.189848e+01 6.752561e+02 [21] 1.046843e+04 7.006516e+03 1.335833e+02 5.688299e+01 5.920724e+01 [26] 1.729243e+03 4.071109e+01 5.612455e+01 1.585384e+01 9.688457e+00 [31] 2.152991e+01 4.697434e+00 2.950576e+02 1.940138e+01 4.795297e+00 [36] 3.229486e+00 3.596473e+00 4.983684e+01 3.327349e+00 7.829057e-01 [41] 0.000000e+00 0.000000e+00 2.495512e+00 0.000000e+00 8.563031e-01 [46] 9.297005e-01 7.339741e+00 2.994614e+02 7.723854e+01 1.149893e+02 [51] 5.945190e+01 1.945031e+02</p>
-<p>$confidence_interval [1] 60990.53</p>
-<p>$discharge_mean [1] 1.179581</p>
-<p>$discharge_mean_sample_days_only [1] 1.238701</p>
-<p>$mse [1] 922948494</p>
-<p>$rmse [1] 30380.07</p>
-<p>$df [1] 51</p>
-<p>$n_conc [1] 52</p>
-<p>$n_discharge [1] 365</p>
+<p>This package consists of the <code>beale</code> function, which calculates the bias-corrected load for a give set of input, and a number of supporting classes aimed at storing information on partitions and data stratrums.</p>
 </div>
 
 

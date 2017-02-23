@@ -23,17 +23,20 @@ stratum <- R6Class("stratum",
                      sl=NULL,
                      q=NULL,
                      c=NULL,
+                     date=NULL,
+                     c_date=NULL,
                      update=function(start_date, end_date, qcdata ) {
                        self$start_date <- start_date
                        self$end_date <- end_date
                        indx <- qcdata$date >= start_date & qcdata$date <= end_date
-                       self$q <- qcdata$discharge[indx]
-                       self$c <- qcdata$concentration[indx]
+                       self$q <- qcdata$discharge_cms[indx]
+                       self$c <- qcdata$concentration_mg_L[indx]
+                       self$date <- qcdata$date[indx]
+                       self$c_date <- self$date[ !is.na( self$c )]
                        self$n_conc <- sum( !is.na( self$c ) )
                      },
                      calc_load=function() {
-                       self$sl <- beale(discharge_cms=self$q, conc_mg_L=self$c)
+                       self$sl <- beale(discharge_cms=self$q, concentration_mg_L=self$c)
                      }
 
                    ))
-

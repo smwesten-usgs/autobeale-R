@@ -29,7 +29,7 @@ partitions <- R6Class("partitions",
                           }
                         },
                         update=function( date_fractions ) {
-                          self$update( date_fractions )
+                          self$update_fractions( date_fractions )
                         },
                         update_fractions=function( date_fractions ) {
                           n <- length( date_fractions )

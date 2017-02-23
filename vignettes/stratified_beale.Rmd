@@ -1,0 +1,85 @@
+---
+title: "Stratified Beale"
+author: "Steve Westenbroek"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Stratified Beale demonstrating support classes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, results='asis'}
+
+library(autobeale)
+
+discharge_file     <- system.file( "extdata", "ROCKFLOW.DAT", package="autobeale")
+concentration_file <- system.file( "extdata", "ROCKNO23.DAT", package="autobeale")
+
+discharge_data     <- read.table( discharge_file, header=TRUE )
+concentration_data <- read.table( concentration_file, header=TRUE )
+
+discharge_conc_df  <- NULL
+discharge_conc_df  <- dplyr::left_join(discharge_data, concentration_data, by=c("date" = "date") )
+
+discharge_conc_df$discharge <- cfs_to_cms( discharge_conc_df$discharge )
+names( discharge_conc_df )  <- c("date","discharge_cms","concentration_mg_L")
+
+discharge_conc_df$date <- lubridate::ymd( discharge_conc_df$date )
+
+```
+
+## Example #2: Beale Ratio Estimator with data partitioned into four stratums
+
+In addition to the `beale` function are a number of `R6` classes aimed at making it easier to examine various data partitioning strategies. Strategies may be ranked by their impact on the root mean square of error associated with the load estimate. In this example, a genetic algorithm package is wired up to assist in the search for an optimum partitioning strategy, with optimimum being defined as minimization of the root mean square of error associated with the overall loading estimate, similar to the original AutoBeale.
+
+In order to use these classes, real R date classes (POSIX) must be supplied along with the discharge and concentration data. Another of Hadley Wickham's library packages, `lubridate`, makes this easy:
+
+```{r, date munging, message=FALSE }
+
+library(autobeale)
+library(lubridate)
+library(mcga)
+
+```
+
+The `discharge_conc_df` dataframe now looks like this:
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(discharge_conc_df, 10))
+```
+
+## Use of the support classes `strata` and `partitions`
+
+First we creata a `strata` object of the appropriate size (4 stratums):
+
+```{r, strata and partitioning}
+number_of_stratums <- 4
+mystrata <- strata$new( number_of_stratums, discharge_conc_df )
+```
+
+The `strata` class creates an underlying `partitions` object to hold information about the dates dividing the stratums. At this point, the partitions themselves are created but uninitialized. We don't normally have to deal with the partitions directly.
+
+We can create the partitions outside of the strata object as a demonstration. For example, if the date fraction vector has values of `c( 0.25, 0.5, 0.75 ):
+
+```{r, partitions}
+
+mypartitions <- partitions$new( start_date=ymd( "1997-01-01"), end_date=ymd("1997-12-31"), num_partitions=3 )
+mypartitions$update_fractions( c( 0.25, 0.5, 0.75 ) )
+mydates <- mypartitions$get_date_values()
+print( mydates )
+```
+
+Now that we have the `strata` and `partitions` objects created and populated, we can rearrange the stratums and calculate loads, and summarize the results. Functions in `strata` and `partitions` objects will take care of subsetting the data appropriately and run the Beale ratio estimator on each data subset.
+
+```{r, load_calc}
+
+mystrata$rearrange_stratums( mypartitions$get_date_values() )
+mystrata$calc_loads()
+myresults_df <- mystrata$summarize_results()
+
+```
+
+```{r echo=FALSE}
+knitr::kable( myresults_df, digits=2 )
+```

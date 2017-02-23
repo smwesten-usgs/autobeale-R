@@ -121,7 +121,8 @@ strata <- R6Class("strata",
                       df <- data.frame( stratum=character(n), from_date=structure(numeric(n), class="Date"),
                                         to_date=structure( numeric(n), class="Date"),
                                         n_conc=numeric(n), n_q=numeric(n), q_mean=numeric(n),
-                                        q_sample_mean=numeric(n), load_daily_mean=numeric(n), mse=numeric(n),
+                                        q_sample_mean=numeric(n), load_daily_biased=numeric(n),
+                                        load_daily_corrected=numeric(n), mse=numeric(n),
                                         rmse=numeric(n), df=numeric(n), load_total=numeric(n), ci=numeric(n),
                                         bias_correction=numeric(n),
                                         stringsAsFactors=FALSE )
@@ -134,7 +135,8 @@ strata <- R6Class("strata",
                         df$n_q[i] <- sl$n_discharge
                         df$q_mean[i] <- sl$discharge_mean
                         df$q_sample_mean[i] <- sl$discharge_mean_sample_days_only
-                        df$load_daily_mean[i] <- sl$load_mean
+                        df$load_daily_biased[i] <- sl$load_daily_biased
+                        df$load_daily_corrected[i] <- sl$load_daily_corrected
                         df$bias_correction[i] <- sl$bias_correction
                         df$mse[i] <- sl$mse
                         df$rmse[i] <- sl$rmse
@@ -149,17 +151,16 @@ strata <- R6Class("strata",
                       df$n_q[n] <- sum( !is.na( self$q_conc_df$discharge ) )
                       df$q_mean[n] <- mean( self$q_conc_df$discharge, na.rm=TRUE )
                       df$q_sample_mean[n] <- mean( self$q_conc_df$discharge[ !is.na( self$q_conc_df$concentration ) ], na.rm=TRUE )
-                      df$load_daily_mean[n] <- mean( df$load_daily_mean[1:n-1] )
-                      df$bias_correction[n] <- NA
+                      df$load_daily_biased[n] <- mean( df$load_daily_biased[1:n-1] )
+                      df$load_daily_corrected[n] <- mean( df$load_daily_corrected[1:n-1] )
+                      df$bias_correction[n] <- df$load_daily_corrected[n] - df$load_daily_biased[n]
                       df$mse[n] <- self$mse
                       df$rmse[n] <- self$rmse
                       df$df[n] <- self$df
-                      df$load_total[n] <-self$total_load
+                      df$load_total[n] <- sum( df$load_total[1:n-1])
                       df$ci[n] <- self$ci
 
                       return( df )
                     }
 
                 ) )
-
-
