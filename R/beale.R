@@ -61,7 +61,7 @@ beale <- R6Class("beale",
                        self$mean_discharge_Q        <- mean( self$discharge_X, na.rm=TRUE )
                        self$theta                   <- 1 / ( self$num_samples_n_h )
                        self$theta_n_minus_1         <- 1 / ( self$num_samples_n_h - 1 )
-                     }
+                     },
                      calculate_discrete_loading_estimates=function() {
                        self$discrete_load_y_i <- self$sample_discharge_x_i * self$c * 86.4
                      },
